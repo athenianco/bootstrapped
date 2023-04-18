@@ -4,15 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
-'''Functions that allow one to run a permutation shuffle test'''
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+"""Functions that allow one to run a permutation shuffle test."""
 
-import numpy as _np
 import multiprocessing as _multiprocessing
 from warnings import warn
+
+import numpy as _np
 
 MAX_ITER = 10000
 MAX_ARRAY_SIZE = 10000
@@ -20,19 +17,19 @@ MAX_ARRAY_SIZE = 10000
 
 # Randomized permutation shuffle test
 def _get_permutation_result(permutation_dist, stat_val):
-    '''Get the permutation test result for a given distribution.
+    """Get the permutation test result for a given distribution.
+
     Args:
         permutation_distribution: numpy array of permutation shuffle results
             from permutation_distribution()
         stat_val: The overall statistic that this method is attempting to
             calculate error bars for.
-    '''
-
+    """
     denom = len(permutation_dist)
 
     pct = (
-        len(permutation_dist[_np.where(permutation_dist >= abs(stat_val))]) +
-        len(permutation_dist[_np.where(permutation_dist <= -abs(stat_val))])
+        len(permutation_dist[_np.where(permutation_dist >= abs(stat_val))])
+        + len(permutation_dist[_np.where(permutation_dist <= -abs(stat_val))])
     ) / denom
 
     return pct
@@ -42,14 +39,14 @@ def _validate_arrays(values_lists):
     t = values_lists[0]
     t_type = type(t)
     if not isinstance(t, _np.ndarray):
-        raise ValueError(('The arrays must be of type numpy.array'))
+        raise ValueError("The arrays must be of type numpy.array")
 
     for _, values in enumerate(values_lists[1:]):
         if not isinstance(values, t_type):
-            raise ValueError('The arrays must all be of the same type')
+            raise ValueError("The arrays must all be of the same type")
 
         if t.shape != values.shape:
-            raise ValueError('The arrays must all be of the same shape')
+            raise ValueError("The arrays must all be of the same shape")
 
 
 def _generate_distributions(values_lists, num_iterations=0):
@@ -65,12 +62,18 @@ def _generate_distributions(values_lists, num_iterations=0):
     return results
 
 
-def _permutation_sim(test_lists, ctrl_lists, stat_func_lists, num_iterations,
-                     iteration_batch_size, seed):
-    '''Returns simulated permutation distribution.
-    See permutation() function for arg descriptions.
-    '''
+def _permutation_sim(
+    test_lists,
+    ctrl_lists,
+    stat_func_lists,
+    num_iterations,
+    iteration_batch_size,
+    seed,
+):
+    """Return simulated permutation distribution.
 
+    See permutation() function for arg descriptions.
+    """
     if seed is not None:
         _np.random.seed(seed)
 
@@ -92,8 +95,8 @@ def _permutation_sim(test_lists, ctrl_lists, stat_func_lists, num_iterations,
         values_sims = _generate_distributions(values_lists, max_rng)
         for i, result in enumerate(values_sims):
             for j in result:
-                test_sims[i].append(j[0:len(test_lists[0])])
-                ctrl_sims[i].append(j[len(test_lists[0]):])
+                test_sims[i].append(j[0 : len(test_lists[0])])
+                ctrl_sims[i].append(j[len(test_lists[0]) :])
 
         for i, test_sim_stat_func in enumerate(zip(test_sims, stat_func_lists)):
             test_sim, stat_func = test_sim_stat_func
@@ -106,18 +109,24 @@ def _permutation_sim(test_lists, ctrl_lists, stat_func_lists, num_iterations,
     return _np.array(test_results), _np.array(ctrl_results)
 
 
-def _permutation_distribution(test_lists, ctrl_lists, stat_func_lists,
-                              num_iterations, iteration_batch_size,
-                              num_threads):
+def _permutation_distribution(
+    test_lists,
+    ctrl_lists,
+    stat_func_lists,
+    num_iterations,
+    iteration_batch_size,
+    num_threads,
+):
+    """Return the simulated permutation distribution.
 
-    '''Returns the simulated permutation distribution. The idea is to sample the
-        same indexes in a permutation shuffle across all arrays passed into
-        values_lists.
+    The idea is to sample the same indexes in a permutation shuffle across all arrays passed into
+    values_lists.
 
-        This is especially useful when you want to co-sample records in a ratio.
-            numerator[k].sum() / denominator[k].sum()
-        and not
-            numerator[ j ].sum() / denominator[k].sum()
+    This is especially useful when you want to co-sample records in a ratio:
+        numerator[k].sum() / denominator[k].sum()
+    and not
+        numerator[ j ].sum() / denominator[k].sum()
+
     Args:
         values_lists: list of numpy arrays (or scipy.sparse.csr_matrix)
             each represents a set of values to shuffle. All arrays in
@@ -136,10 +145,11 @@ def _permutation_distribution(test_lists, ctrl_lists, stat_func_lists,
             the shuffle. Defaults to 1. If -1 is specified then
             multiprocessing.cpu_count() is used instead.
         exact: True to run an exact permutation shuffle test.
+
     Returns:
         The set of permutation shuffle samples where each stat_function is
         applied on the shuffled values.
-    '''
+    """
     _validate_arrays(test_lists)
     _validate_arrays(ctrl_lists)
 
@@ -156,8 +166,13 @@ def _permutation_distribution(test_lists, ctrl_lists, stat_func_lists,
 
     if num_threads <= 1:
         test_results, ctrl_results = _permutation_sim(
-            test_lists, ctrl_lists, stat_func_lists, num_iterations,
-            iteration_batch_size, None)
+            test_lists,
+            ctrl_lists,
+            stat_func_lists,
+            num_iterations,
+            iteration_batch_size,
+            None,
+        )
     else:
         pool = _multiprocessing.Pool(num_threads)
 
@@ -166,9 +181,15 @@ def _permutation_distribution(test_lists, ctrl_lists, stat_func_lists,
         test_results = []
         ctrl_results = []
         for seed in _np.random.randint(0, 2**32 - 1, num_threads):
-            job_args = (test_lists, ctrl_lists, stat_func_lists, iter_per_job,
-                        iteration_batch_size, seed)
-            t, c = pool.apply_async(_permutation_sim, job_args)
+            job_args = (
+                test_lists,
+                ctrl_lists,
+                stat_func_lists,
+                iter_per_job,
+                iteration_batch_size,
+                seed,
+            )
+            t, c = pool.apply_async(_permutation_sim, job_args)  # noqa: PIE785
             test_results.append(t)
             ctrl_results.append(c)
 
@@ -180,11 +201,20 @@ def _permutation_distribution(test_lists, ctrl_lists, stat_func_lists,
     return test_results, ctrl_results
 
 
-def permutation_test(test, ctrl, stat_func, compare_func, test_denominator=None,
-                     ctrl_denominator=None, num_iterations=10000,
-                     iteration_batch_size=None, num_threads=1,
-                     return_distribution=False):
-    '''Returns bootstrap confidence intervals for an A/B test.
+def permutation_test(
+    test,
+    ctrl,
+    stat_func,
+    compare_func,
+    test_denominator=None,
+    ctrl_denominator=None,
+    num_iterations=10000,
+    iteration_batch_size=None,
+    num_threads=1,
+    return_distribution=False,
+):
+    """Return bootstrap confidence intervals for an A/B test.
+
     Args:
         test: numpy array (or scipy.sparse.csr_matrix) of test results
         ctrl: numpy array (or scipy.sparse.csr_matrix) of ctrl results
@@ -222,16 +252,14 @@ def permutation_test(test, ctrl, stat_func, compare_func, test_denominator=None,
     Returns:
         percentage representing the percentage of permutation distribution
             values that are more extreme than the original distribution.
-    '''
-    is_large_array = (len(test) >= MAX_ARRAY_SIZE or len(ctrl) >= MAX_ARRAY_SIZE)
+    """
+    is_large_array = len(test) >= MAX_ARRAY_SIZE or len(ctrl) >= MAX_ARRAY_SIZE
     if is_large_array and num_iterations > MAX_ITER:
-        warning_text = ("Maximum array length of {} exceeded, "
-                        "limiting num_iterations to {}")
+        warning_text = "Maximum array length of {} exceeded, limiting num_iterations to {}"
         warn(warning_text.format(MAX_ARRAY_SIZE, MAX_ITER))
         num_iterations = MAX_ITER
 
-    both_denominators = test_denominator is not None and \
-            ctrl_denominator is not None
+    both_denominators = test_denominator is not None and ctrl_denominator is not None
     both_numerators = test is not None and ctrl is not None
 
     if both_numerators and not both_denominators:
@@ -257,13 +285,17 @@ def permutation_test(test, ctrl, stat_func, compare_func, test_denominator=None,
         ctrl_val = stat_func(ctrl)[0] / stat_func(ctrl_denominator)[0]
 
     elif not both_numerators:
-        raise ValueError('Both test and ctrl numerators must be specified.')
+        raise ValueError("Both test and ctrl numerators must be specified.")
     else:
-        raise ValueError('Both test and ctrl denominators must be specified.')
+        raise ValueError("Both test and ctrl denominators must be specified.")
 
     test_results, ctrl_results = _permutation_distribution(
-        test_lists, ctrl_lists, stat_func_lists, num_iterations,
-        iteration_batch_size, num_threads
+        test_lists,
+        ctrl_lists,
+        stat_func_lists,
+        num_iterations,
+        iteration_batch_size,
+        num_threads,
     )
 
     test_dist = do_division(*test_results)
