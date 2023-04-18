@@ -1,22 +1,39 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from pathlib import Path
 
 from setuptools import setup
 
-readme = open('README.rst').read()
+
+def read_version():
+    with (Path(__file__).with_name("bootstrapped") / "__init__.py").open() as fd:
+        for line in fd:
+            if line.startswith("__version__ = "):
+                return line.split()[-1].strip().strip('"')
+
 
 setup(
-    name="bootstrapped",
-    version="0.0.2",
-    description="Implementations of the percentile based bootstrap",
+    name="bootstrapped-ng",
+    version=read_version(),
+    description="Implementations of the percentile based bootstrap - forked",
+    long_description=open("README.rst").read(),
     author="Spencer Beecher",
     author_email="spencebeecher@gmail.com",
-    packages=['bootstrapped'],
-    long_description=readme,
+    maintainer="Vadim Markovtsev",
+    maintainer_email="vadim@athenian.co",
+    packages=["bootstrapped"],
     install_requires=[
-        "matplotlib>=1.5.3",
         "numpy>=1.11.1",
-        "pandas>=0.18.1",
         "scipy>=0.19.1",
     ],
-    url='https://github.com/facebookincubator/bootstrapped',
+    extras_require={
+        "power": [
+            "matplotlib>=1.5.3",
+            "pandas>=0.18.1",
+        ],
+    },
+    python_requires=">=3.10.0",
+    url="https://github.com/athenianco/bootstrapped",
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+    ],
 )

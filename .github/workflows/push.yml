@@ -1,0 +1,75 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    if: "!contains(github.event.head_commit.message, 'Bump version') || github.event_name != 'push'"
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        set -x
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-lint.txt
+    - name: Lint
+      run: make lint
+  test:
+    if: "!contains(github.event.head_commit.message, 'Bump version') || github.event_name != 'push'"
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        set -x
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        pip install -e .
+    - name: Unit tests
+      run: |
+        make test
+        sed -i 's/package name="."/package name="bootstrapped"/g' coverage.xml
+    - uses: codecov/codecov-action@v3
+      if: "matrix.python-version == '3.11'"
+      name: codecov
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+  bump_version:
+    name: Bump the version
+    needs: [ lint, test ]
+    if: "!contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/main' && github.event_name == 'push'"
+    runs-on: ubuntu-22.04
+    steps:
+    - name: actions/checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 10
+        persist-credentials: false
+    - name: current_version
+      run: echo "current_version=$(grep '__version__' bootstrapped/__init__.py | cut -d\" -f2)" >> $GITHUB_ENV
+    - name: FragileTech/bump-version
+      uses: FragileTech/bump-version@main
+      with:
+        current_version: "${{ env.current_version }}"
+        files: bootstrapped/__init__.py
+        commit_name: Groundskeeper Willie
+        commit_email: bot@athenian.co
+        login: gkwillie
+        token: ${{ secrets.GKWILLIE_TOKEN }}
