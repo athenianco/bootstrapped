@@ -15,10 +15,10 @@ jobs:
       with:
         python-version: 3.11
 
-    - name: Build a source tarball
+    - name: Build packages
       run: |
         pip install --upgrade pip
-        python setup.py sdist
+        python setup.py sdist bdist_wheel
 
     - name: Publish package 📦 to PyPI 🧀
       uses: pypa/gh-action-pypi-publish@v1.5.0
