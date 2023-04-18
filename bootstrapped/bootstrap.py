@@ -318,7 +318,7 @@ def bootstrap(
     denominator_values=None,
     alpha=0.05,
     num_iterations=10000,
-    iteration_batch_size=10,
+    iteration_batch_size=None,
     is_pivotal=True,
     num_threads=1,
     return_distribution=False,
@@ -355,7 +355,7 @@ def bootstrap(
             will produce a matrix of len(values) x num_iterations. If specified
             the code will produce sets of len(values) x iteration_batch_size
             (one at a time) until num_iterations have been simulated.
-            Defaults to 10. Passing None will calculate the full simulation in one step.
+            Defaults to None. Passing None will calculate the full simulation in one step.
         is_pivotal: if true, use the pivotal method for bootstrapping confidence
             intervals. If false, use the percentile method.
         num_threads: The number of therads to use. This speeds up calculation of
@@ -411,7 +411,7 @@ def bootstrap_ab(
     ctrl_denominator=None,
     alpha=0.05,
     num_iterations=10000,
-    iteration_batch_size=10,
+    iteration_batch_size=None,
     scale_test_by=1.0,
     is_pivotal=True,
     num_threads=1,
@@ -451,7 +451,7 @@ def bootstrap_ab(
             analysis slower.
         iteration_batch_size: The bootstrap sample can generate very large
             arrays. This function iteration_batch_size limits the memory
-            footprint by batching bootstrap rounds. Defaults to 10. Passing None
+            footprint by batching bootstrap rounds. Defaults to None. Passing None
             will attempt to calculate the full simulation in one step.
         scale_test_by: The ratio between test and control population
             sizes. Use this if your test and control split is different from a
